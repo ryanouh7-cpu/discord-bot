@@ -3,40 +3,40 @@ const { Client, GatewayIntentBits, PermissionsBitField } = require('discord.js')
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
+    GatewayIntentBits.MessageContent,
+  ],
 });
 
 client.once('ready', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
-client.on('messageCreate', async (message) => {
-  if (!message.content.startsWith('!dmall')) return;
+client.on('messageCreate', async message => {
+  if (!message.content.startsWith('!send')) return;
 
+  // ✅ تحقق انه ادمن
   if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-    return message.reply('❌ الأمر للأدمن فقط');
+    return message.reply('❌ هذا الأمر للإدمن فقط');
   }
 
-  const text = message.content.replace('!dmall ', '');
-  if (!text) return message.reply('❌ اكتب الرسالة بعد الأمر');
-
-  const members = await message.guild.members.fetch();
-  let count = 0;
-
-  for (const member of members.values()) {
-    if (!member.user.bot) {
-      try {
-        await member.send(text);
-        count++;
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      } catch {}
-    }
+  const user = message.mentions.users.first();
+  if (!user) {
+    return message.reply('منشن الشخص أولاً.');
   }
 
-  message.reply(`✅ تم الإرسال لـ ${count} عضو`);
+  const args = message.content.split(' ');
+  const msg = args.slice(2).join(' ');
+  if (!msg) {
+    return message.reply('اكتب الرسالة بعد المنشن.');
+  }
+
+  try {
+    await user.send(msg);
+    message.reply('✅ تم الإرسال بالخاص');
+  } catch (err) {
+    message.reply('❌ ما أقدر أرسل له خاص (يمكن مقفل الخاص)');
+  }
 });
 
 client.login(process.env.TOKEN);
