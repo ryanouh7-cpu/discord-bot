@@ -1,4 +1,5 @@
 const { Client, GatewayIntentBits, PermissionsBitField } = require('discord.js');
+const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
 
 const client = new Client({
   intents: [
@@ -6,6 +7,7 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates,
   ],
 });
 
@@ -13,19 +15,16 @@ client.once('ready', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
-client.on('messageCreate', async message => {
+client.on('messageCreate', async (message) => {
 
   if (!message.guild) return;
 
   const content = message.content.toLowerCase().replace(/\s+/g, '');
 
   // =========================
-  // 👮‍♂️ رد ذكي لكلمة فوفو (للأدمن فقط)
+  // 👮‍♂️ فوفو (للأدمن فقط)
   // =========================
-  if (
-    content.startsWith('فوفو') ||
-    content.startsWith('fofo')
-  ) {
+  if (content.startsWith('فوفو') || content.startsWith('fofo')) {
 
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       return;
@@ -40,11 +39,17 @@ client.on('messageCreate', async message => {
 ↳ يرسل رسالة خاصة لشخص معين
 
 !dmall الرسالة
-↳ يرسل رسالة خاصة لجميع أعضاء السيرفر`
+↳ يرسل رسالة خاصة للجميع
+
+!join
+↳ يدخل الروم الصوتي
+
+!leave
+↳ يخرج من الروم الصوتي`
     );
   }
 
-  // 🔒 باقي الأوامر للإدمن فقط
+  // 🔒 باقي الأوامر للأدمن فقط
   if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
     return;
   }
@@ -92,6 +97,38 @@ client.on('messageCreate', async message => {
     message.reply(`✅ تم الإرسال لـ ${count} عضو`);
   }
 
+  // =========================
+  // 🔊 دخول روم صوتي
+  // =========================
+  if (message.content === '!join') {
+
+    if (!message.member.voice.channel) {
+      return message.reply('❌ لازم تدخل روم صوتي أولاً');
+    }
+
+    joinVoiceChannel({
+      channelId: message.member.voice.channel.id,
+      guildId: message.guild.id,
+      adapterCreator: message.guild.voiceAdapterCreator,
+    });
+
+    message.reply('🔊 دخلت الروم الصوتي');
+  }
+
+  // =========================
+  // 🚪 خروج من روم صوتي
+  // =========================
+  if (message.content === '!leave') {
+
+    const connection = getVoiceConnection(message.guild.id);
+    if (!connection) return message.reply('❌ أنا مو داخل روم');
+
+    connection.destroy();
+    message.reply('🚪 طلعت من الروم الصوتي');
+  }
+
 });
 
 client.login(process.env.TOKEN);
+
+
